@@ -1,3 +1,5 @@
+local K = require("constants")
+
 local player
 
 function love.load()
@@ -6,13 +8,15 @@ function love.load()
 
 
     player = {
-        w = 32,
-        h = 32,
-        speed = 200 -- pixels per second
+        x = 0,
+        y = 0,
+        w = K.PLAYER_SIZE,
+        h = K.PLAYER_SIZE,
+        speed = K.PLAYER_SPEED
     }
 
     player.x = screen_width / 2 - player.w / 2
-    player.y = screen_height - player.h - 10
+    player.y = screen_height - player.h - K.PLAYER_BOTTOM_MARGIN
 end
 
 function love.draw() -- Executed in loop to draw the screen
