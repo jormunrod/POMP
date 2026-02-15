@@ -66,8 +66,20 @@ function love.update(dt) -- Executed on every frame to calculate the logic
 
         enemy.y = enemy.y + enemy.speed * dt
 
+        if checkCollision(player, enemy) then
+            love.load() -- Restart the game
+            return
+        end
+
         if enemy.y > love.graphics.getHeight() then
             table.remove(enemies, i)
         end
     end
+end
+
+function checkCollision(a, b)
+    return (a.x < b.x + b.w) and
+        (a.x + a.w > b.x) and
+        (a.y < b.y + b.h) and
+        (a.y + a.h > b.y)
 end
