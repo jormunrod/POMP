@@ -7,7 +7,7 @@ local coins
 local enemy_spawn_timer
 local coin_spawn_timer
 
-local game_state -- "menu", "playing", "gameover"
+local game_state -- "menu", "options" "playing", "gameover"
 
 local img_coin
 
@@ -17,7 +17,15 @@ local sfx_hit
 local font_title
 local font_game
 
-local checkCollision, resetGame, drawGame, drawMenu, drawGameover
+local menu_selection = 1                        -- 1=play, 2=options
+local difficulty_index = 2                      -- 1=easy, 2=normal, 3=hard
+local difficulties = {
+    { name = "EASY",   spawn_rate_mult = 1.5 }, -- 50% slower (more easy)
+    { name = "NORMAL", spawn_rate_mult = 1.0 }, -- normal velocity
+    { name = "HARD",   spawn_rate_mult = 0.6 }  -- 40% faster (more hard)
+}
+
+local checkCollision, resetGame, drawGame, drawMenu, drawGameover, drawOptions
 
 
 function love.load()
@@ -43,8 +51,12 @@ function love.load()
 end
 
 function love.draw()
+    love.graphics.setColor(1, 1, 1)
+
     if game_state == "menu" then
         drawMenu()
+    elseif game_state == "options" then
+        drawOptions()
     elseif game_state == "playing" then
         drawGame()
     elseif game_state == "gameover" then
@@ -104,8 +116,14 @@ function love.update(dt) -- Executed on every frame to calculate the logic
         -- Enemies spawn
         enemy_spawn_timer = enemy_spawn_timer - dt
         if enemy_spawn_timer <= 0 then
-            local dynamic_time = K.ENEMY_SPAWN_RATE - (score * 0.01)
-            enemy_spawn_timer = math.max(0.2, dynamic_time)
+            local mult = difficulties[difficulty_index].spawn_rate_mult
+
+            local base_rate = K.ENEMY_SPAWN_RATE * mult
+
+            local dynamic_time = base_rate - (score * 0.01)
+
+            local min_limit = 0.2 * mult
+            enemy_spawn_timer = math.max(min_limit, dynamic_time)
 
             local new_enemy = {
                 x = love.math.random(0, love.graphics.getWidth() - K.ENEMY_SIZE),
@@ -142,17 +160,38 @@ end
 
 function love.keypressed(key)
     if game_state == "menu" then
-        if key == "space" or key == "return" then
-            game_state = "playing"
-            resetGame()
+        if key == "up" then
+            menu_selection = menu_selection - 1
+            if menu_selection < 1 then menu_selection = 2 end
+        elseif key == "down" then
+            menu_selection = menu_selection + 1
+            if menu_selection > 2 then menu_selection = 1 end
+        end
+        if key == "return" or key == "space" or key == "z" then
+            if menu_selection == 1 then
+                game_state = "playing"
+                resetGame()
+            elseif menu_selection == 2 then
+                game_state = "options"
+            end
+        end
+    elseif game_state == "options" then
+        if key == "left" then
+            difficulty_index = difficulty_index - 1
+            if difficulty_index < 1 then difficulty_index = 3 end
+        elseif key == "right" then
+            difficulty_index = difficulty_index + 1
+            if difficulty_index > 3 then difficulty_index = 1 end
+        end
+        if key == "return" or key == "space" or key == "escape" or key == "z" then
+            game_state = "menu"
         end
     elseif game_state == "gameover" then
-        if key == "space" or key == "return" then
+        if key == "return" or key == "space" or key == "z" then
             game_state = "menu"
         end
     end
-
-    if key == "escape" then
+    if key == "escape" and game_state == "menu" then
         love.event.quit()
     end
 end
@@ -161,13 +200,29 @@ function drawMenu()
     local w = love.graphics.getWidth()
     local h = love.graphics.getHeight()
 
-    local subtitle = "Press START to play"
+    local text_play = "PLAY GAME"
+    local text_opt = "OPTIONS"
 
     love.graphics.setColor(1, 1, 1)
     love.graphics.setFont(font_title)
     love.graphics.printf(K.GAME_TITLE, 0, h / 3, w, "center")
     love.graphics.setFont(font_game)
-    love.graphics.printf(subtitle, 0, h / 2, w, "center")
+
+    if menu_selection == 1 then
+        text_play = "> " .. text_play .. " <"
+        love.graphics.setColor(1, 1, 0)
+    else
+        love.graphics.setColor(1, 1, 1)
+    end
+    love.graphics.printf(text_play, 0, h / 2, w, "center")
+
+    if menu_selection == 2 then
+        text_opt = "> " .. text_opt .. " <"
+        love.graphics.setColor(1, 1, 0)
+    else
+        love.graphics.setColor(1, 1, 1)
+    end
+    love.graphics.printf(text_opt, 0, h / 2 + 40, w, "center")
 end
 
 function drawGame()
@@ -205,6 +260,26 @@ function drawGameover()
     love.graphics.setColor(1, 1, 1)
     love.graphics.printf("Final score: " .. score, 0, h / 2, w, "center")
     love.graphics.printf("Press START to Menu", 0, h / 2 + 30, w, "center")
+end
+
+function drawOptions()
+    local w = love.graphics.getWidth()
+    local h = love.graphics.getHeight()
+
+    love.graphics.setColor(1, 1, 1)
+    love.graphics.setFont(font_title)
+    love.graphics.printf("OPTIONS", 0, h / 4, w, "center")
+
+    love.graphics.setFont(font_game)
+    love.graphics.printf("Difficulty:", 0, h / 2 - 20, w, "center")
+
+    local difficulty_name = "< " .. difficulties[difficulty_index].name .. " >"
+
+    love.graphics.setColor(0.5, 1, 0.5)
+    love.graphics.printf(difficulty_name, 0, h / 2 + 20, w, "center")
+
+    love.graphics.setColor(1, 1, 1)
+    love.graphics.printf("Press START to return", 0, h - 50, w, "center")
 end
 
 function checkCollision(a, b)
