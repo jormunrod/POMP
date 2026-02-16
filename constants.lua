@@ -1,5 +1,7 @@
 return {
     GAME_TITLE = "POMP",
+    GAME_VERSION = "v0.1",
+    GAME_CREDITS = "Made with LOVE by @jormunrod",
 
     PLAYER_SIZE = 32,
     PLAYER_SPEED = 200, -- px/s

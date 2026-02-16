@@ -223,6 +223,12 @@ function drawMenu()
         love.graphics.setColor(1, 1, 1)
     end
     love.graphics.printf(text_opt, 0, h / 2 + 40, w, "center")
+
+    love.graphics.setColor(0.6, 0.6, 0.6)
+
+    local footer_text = K.GAME_CREDITS .. "  |  " .. K.GAME_VERSION
+
+    love.graphics.printf(footer_text, 0, h - 40, w, "center")
 end
 
 function drawGame()
