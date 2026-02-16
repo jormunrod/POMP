@@ -7,37 +7,147 @@ local coins
 local enemy_spawn_timer
 local coin_spawn_timer
 local checkCollision
+local resetGame
+local drawGame
+local drawMenu
+local drawGameover
+local game_state -- "menu", "playing", "gameover"
 
 function love.load()
-    local screen_width = love.graphics.getWidth()
-    local screen_height = love.graphics.getHeight()
+    love.graphics.setDefaultFilter("nearest", "nearest")
 
-    -- Create player
-    player = {
-        x = 0,
-        y = 0,
-        w = K.PLAYER_SIZE,
-        h = K.PLAYER_SIZE,
-        speed = K.PLAYER_SPEED,
-        lives = K.PLAYER_LIVES
-    }
+    -- load images
+    -- ...
 
-    player.x = screen_width / 2 - player.w / 2
-    player.y = screen_height - player.h - K.PLAYER_BOTTOM_MARGIN
-
-    -- Enemies
-    enemies = {}
-    enemy_spawn_timer = 0
-
-    -- Coins
-    coins = {}
-    coin_spawn_timer = 0
-
-    -- Score
-    score = 0
+    game_state = "menu"
+    resetGame()
 end
 
-function love.draw() -- Executed in loop to draw the screen
+function love.draw()
+    if game_state == "menu" then
+        drawMenu()
+    elseif game_state == "playing" then
+        drawGame()
+    elseif game_state == "gameover" then
+        drawGameover()
+    end
+end
+
+function love.update(dt) -- Executed on every frame to calculate the logic
+    if game_state == "playing" then
+        -- Player movement
+        if love.keyboard.isDown("right") then
+            player.x = player.x + player.speed * dt
+        end
+        if love.keyboard.isDown("left") then
+            player.x = player.x - player.speed * dt
+        end
+
+        -- Map limits
+        if player.x < 0 then
+            player.x = 0
+        end
+        if player.x > love.graphics.getWidth() - player.w then
+            player.x = love.graphics.getWidth() - player.w
+        end
+
+        -- Coins spawn
+        coin_spawn_timer = coin_spawn_timer - dt
+        if coin_spawn_timer <= 0 then
+            coin_spawn_timer = K.COIN_SPAWN_RATE
+
+            local new_coin = {
+                x = love.math.random(0, love.graphics.getWidth() - K.COIN_SIZE),
+                y = -K.COIN_SIZE,
+                w = K.COIN_SIZE,
+                h = K.COIN_SIZE,
+                speed = K.COIN_SPEED
+            }
+
+            table.insert(coins, new_coin)
+        end
+
+        -- Coins movement and cleanup
+        for i = #coins, 1, -1 do
+            local coin = coins[i]
+
+            coin.y = coin.y + coin.speed * dt
+
+            if checkCollision(player, coin) then
+                table.remove(coins, i)
+                score = score + 1
+            elseif coin.y > love.graphics.getHeight() then
+                table.remove(coins, i)
+            end
+        end
+
+        -- Enemies spawn
+        enemy_spawn_timer = enemy_spawn_timer - dt
+        if enemy_spawn_timer <= 0 then
+            enemy_spawn_timer = K.ENEMY_SPAWN_RATE
+
+            local new_enemy = {
+                x = love.math.random(0, love.graphics.getWidth() - K.ENEMY_SIZE),
+                y = -K.ENEMY_SIZE,
+                w = K.ENEMY_SIZE,
+                h = K.ENEMY_SIZE,
+                speed = K.ENEMY_SPEED
+            }
+
+            table.insert(enemies, new_enemy)
+        end
+
+        -- Enemies movement and cleanup
+        for i = #enemies, 1, -1 do
+            local enemy = enemies[i]
+
+            enemy.y = enemy.y + enemy.speed * dt
+
+            if checkCollision(player, enemy) then
+                if player.lives > 1 then
+                    player.lives = player.lives - 1
+                else
+                    player.lives = 0
+                    game_state = "gameover"
+                end
+                table.remove(enemies, i)
+            elseif enemy.y > love.graphics.getHeight() then
+                table.remove(enemies, i)
+            end
+        end
+    end
+end
+
+function love.keypressed(key)
+    if game_state == "menu" then
+        if key == "space" or key == "return" then
+            game_state = "playing"
+            resetGame()
+        end
+    elseif game_state == "gameover" then
+        if key == "space" or key == "return" then
+            game_state = "menu"
+        end
+    end
+
+    if key == "escape" then
+        love.event.quit()
+    end
+end
+
+function drawMenu()
+    local w = love.graphics.getWidth()
+    local h = love.graphics.getHeight()
+
+    local title = "POMP"
+    local subtitle = "Press START to play"
+
+    love.graphics.setColor(1, 1, 1)
+    love.graphics.printf(title, 0, h / 3, w, "center")
+    love.graphics.printf(subtitle, 0, h / 2, w, "center")
+end
+
+function drawGame()
     -- Draw player
     love.graphics.setColor(1, 1, 1)
     love.graphics.rectangle("fill", player.x, player.y, player.w, player.h)
@@ -60,91 +170,16 @@ function love.draw() -- Executed in loop to draw the screen
     love.graphics.print("Score: " .. score, 10, 30)
 end
 
-function love.update(dt) -- Executed on every frame to calculate the logic
-    -- love.keyboard.isDown(key) returns true while key is pressed.
-    -- dt (delta time): time since the last frame
+function drawGameover()
+    local w = love.graphics.getWidth()
+    local h = love.graphics.getHeight()
 
-    -- Player movement
-    if love.keyboard.isDown("right") then
-        player.x = player.x + player.speed * dt
-    end
-    if love.keyboard.isDown("left") then
-        player.x = player.x - player.speed * dt
-    end
+    love.graphics.setColor(1, 0, 0)
+    love.graphics.print("GAME OVER", w / 2 - 40, h / 3)
 
-    -- Map limits
-    if player.x < 0 then
-        player.x = 0
-    end
-    if player.x > love.graphics.getWidth() - player.w then
-        player.x = love.graphics.getWidth() - player.w
-    end
-
-    -- Coins spawn
-    coin_spawn_timer = coin_spawn_timer - dt
-    if coin_spawn_timer <= 0 then
-        coin_spawn_timer = K.COIN_SPAWN_RATE
-
-        local new_coin = {
-            x = love.math.random(0, love.graphics.getWidth() - K.COIN_SIZE),
-            y = -K.COIN_SIZE,
-            w = K.COIN_SIZE,
-            h = K.COIN_SIZE,
-            speed = K.COIN_SPEED
-        }
-
-        table.insert(coins, new_coin)
-    end
-
-    -- Coins movement and cleanup
-    for i = #coins, 1, -1 do
-        local coin = coins[i]
-
-        coin.y = coin.y + coin.speed * dt
-
-        if checkCollision(player, coin) then
-            table.remove(coins, i)
-            score = score + 1
-        elseif coin.y > love.graphics.getHeight() then
-            table.remove(coins, i)
-        end
-    end
-
-    -- Enemies spawn
-    enemy_spawn_timer = enemy_spawn_timer - dt
-    if enemy_spawn_timer <= 0 then
-        enemy_spawn_timer = K.ENEMY_SPAWN_RATE
-
-        local new_enemy = {
-            x = love.math.random(0, love.graphics.getWidth() - K.ENEMY_SIZE),
-            y = -K.ENEMY_SIZE,
-            w = K.ENEMY_SIZE,
-            h = K.ENEMY_SIZE,
-            speed = K.ENEMY_SPEED
-        }
-
-        table.insert(enemies, new_enemy)
-    end
-
-    -- Enemies movement and cleanup
-    for i = #enemies, 1, -1 do
-        local enemy = enemies[i]
-
-        enemy.y = enemy.y + enemy.speed * dt
-
-        if checkCollision(player, enemy) then
-            if player.lives > 1 then
-                player.lives = player.lives - 1
-            else
-                player.lives = 0
-                love.load()
-                return
-            end
-            table.remove(enemies, i)
-        elseif enemy.y > love.graphics.getHeight() then
-            table.remove(enemies, i)
-        end
-    end
+    love.graphics.setColor(1, 1, 1)
+    love.graphics.print("Final score: " .. score, w / 2 - 45, h / 2)
+    love.graphics.print("Press START to Menu", w / 2 - 60, h / 2 + 30)
 end
 
 function checkCollision(a, b)
@@ -152,4 +187,30 @@ function checkCollision(a, b)
         (a.x + a.w > b.x) and
         (a.y < b.y + b.h) and
         (a.y + a.h > b.y)
+end
+
+function resetGame()
+    local screen_width = love.graphics.getWidth()
+    local screen_height = love.graphics.getHeight()
+
+    -- Create player
+    player = {
+        x = screen_width / 2 - K.PLAYER_SIZE / 2,
+        y = screen_height - K.PLAYER_SIZE - K.PLAYER_BOTTOM_MARGIN,
+        w = K.PLAYER_SIZE,
+        h = K.PLAYER_SIZE,
+        speed = K.PLAYER_SPEED,
+        lives = K.PLAYER_LIVES
+    }
+
+    -- Enemies
+    enemies = {}
+    enemy_spawn_timer = 0
+
+    -- Coins
+    coins = {}
+    coin_spawn_timer = 0
+
+    -- Score
+    score = 0
 end
