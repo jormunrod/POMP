@@ -24,8 +24,8 @@ function love.load()
     love.math.setRandomSeed(os.time())
 
     --load fonts
-    font_title = love.graphics.newFont("assets/fonts/kenney_pixel.ttf", 50)
-    font_game = love.graphics.newFont("assets/fonts/kenney_pixel.ttf", 20)
+    font_title = love.graphics.newFont("assets/fonts/kenney_pixel.ttf", 80)
+    font_game = love.graphics.newFont("assets/fonts/kenney_pixel.ttf", 30)
     love.graphics.setFont(font_game)
 
 
