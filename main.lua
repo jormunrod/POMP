@@ -16,6 +16,8 @@ local game_state -- "menu", "playing", "gameover"
 function love.load()
     love.graphics.setDefaultFilter("nearest", "nearest")
 
+    love.math.setRandomSeed(os.time())
+
     -- load images
     -- ...
 
