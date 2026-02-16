@@ -6,17 +6,23 @@ local enemies
 local coins
 local enemy_spawn_timer
 local coin_spawn_timer
-local checkCollision
-local resetGame
-local drawGame
-local drawMenu
-local drawGameover
+
 local game_state -- "menu", "playing", "gameover"
+
+local sfx_coin
+local sfx_hit
+
+local checkCollision, resetGame, drawGame, drawMenu, drawGameover
+
 
 function love.load()
     love.graphics.setDefaultFilter("nearest", "nearest")
 
     love.math.setRandomSeed(os.time())
+
+    -- load sounds
+    sfx_coin = love.audio.newSource("assets/sfx/coin.wav", "static")
+    sfx_hit = love.audio.newSource("assets/sfx/hit.wav", "static")
 
     -- load images
     -- ...
@@ -78,6 +84,7 @@ function love.update(dt) -- Executed on every frame to calculate the logic
             if checkCollision(player, coin) then
                 table.remove(coins, i)
                 score = score + 1
+                sfx_coin:clone():play()
             elseif coin.y > love.graphics.getHeight() then
                 table.remove(coins, i)
             end
@@ -106,6 +113,7 @@ function love.update(dt) -- Executed on every frame to calculate the logic
             enemy.y = enemy.y + enemy.speed * dt
 
             if checkCollision(player, enemy) then
+                sfx_hit:clone():play()
                 if player.lives > 1 then
                     player.lives = player.lives - 1
                 else
