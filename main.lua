@@ -9,6 +9,8 @@ local coin_spawn_timer
 
 local game_state -- "menu", "playing", "gameover"
 
+local img_coin
+
 local sfx_coin
 local sfx_hit
 
@@ -34,7 +36,7 @@ function love.load()
     sfx_hit = love.audio.newSource("assets/sfx/hit.wav", "static")
 
     -- load images
-    -- ...
+    img_coin = love.graphics.newImage("assets/sprites/coin.png")
 
     game_state = "menu"
     resetGame()
@@ -180,9 +182,9 @@ function drawGame()
     end
 
     -- Draw coins
-    love.graphics.setColor(1, 1, 0)
+    love.graphics.setColor(1, 1, 1)
     for _, coin in ipairs(coins) do
-        love.graphics.rectangle("fill", coin.x, coin.y, coin.w, coin.h)
+        love.graphics.draw(img_coin, coin.x, coin.y)
     end
 
     -- Draw UI
