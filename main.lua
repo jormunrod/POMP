@@ -141,11 +141,10 @@ function drawMenu()
     local w = love.graphics.getWidth()
     local h = love.graphics.getHeight()
 
-    local title = "POMP"
     local subtitle = "Press START to play"
 
     love.graphics.setColor(1, 1, 1)
-    love.graphics.printf(title, 0, h / 3, w, "center")
+    love.graphics.printf(K.GAME_TITLE, 0, h / 3, w, "center")
     love.graphics.printf(subtitle, 0, h / 2, w, "center")
 end
 
