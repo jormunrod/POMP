@@ -175,11 +175,11 @@ function drawGameover()
     local h = love.graphics.getHeight()
 
     love.graphics.setColor(1, 0, 0)
-    love.graphics.print("GAME OVER", w / 2 - 40, h / 3)
+    love.graphics.printf("GAME OVER", 0, h / 3, w, "center")
 
     love.graphics.setColor(1, 1, 1)
-    love.graphics.print("Final score: " .. score, w / 2 - 45, h / 2)
-    love.graphics.print("Press START to Menu", w / 2 - 60, h / 2 + 30)
+    love.graphics.printf("Final score: " .. score, 0, h / 2, w, "center")
+    love.graphics.printf("Press START to Menu", 0, h / 2 + 30, w, "center")
 end
 
 function checkCollision(a, b)
