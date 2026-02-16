@@ -196,7 +196,9 @@ function drawGameover()
     local h = love.graphics.getHeight()
 
     love.graphics.setColor(1, 0, 0)
+    love.graphics.setFont(font_title)
     love.graphics.printf("GAME OVER", 0, h / 3, w, "center")
+    love.graphics.setFont(font_game)
 
     love.graphics.setColor(1, 1, 1)
     love.graphics.printf("Final score: " .. score, 0, h / 2, w, "center")
