@@ -93,7 +93,8 @@ function love.update(dt) -- Executed on every frame to calculate the logic
         -- Enemies spawn
         enemy_spawn_timer = enemy_spawn_timer - dt
         if enemy_spawn_timer <= 0 then
-            enemy_spawn_timer = K.ENEMY_SPAWN_RATE
+            local dynamic_time = K.ENEMY_SPAWN_RATE - (score * 0.01)
+            enemy_spawn_timer = math.max(0.2, dynamic_time)
 
             local new_enemy = {
                 x = love.math.random(0, love.graphics.getWidth() - K.ENEMY_SIZE),
