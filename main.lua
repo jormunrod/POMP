@@ -12,6 +12,9 @@ local game_state -- "menu", "playing", "gameover"
 local sfx_coin
 local sfx_hit
 
+local font_title
+local font_game
+
 local checkCollision, resetGame, drawGame, drawMenu, drawGameover
 
 
@@ -19,6 +22,12 @@ function love.load()
     love.graphics.setDefaultFilter("nearest", "nearest")
 
     love.math.setRandomSeed(os.time())
+
+    --load fonts
+    font_title = love.graphics.newFont("assets/fonts/kenney_pixel.ttf", 50)
+    font_game = love.graphics.newFont("assets/fonts/kenney_pixel.ttf", 20)
+    love.graphics.setFont(font_game)
+
 
     -- load sounds
     sfx_coin = love.audio.newSource("assets/sfx/coin.wav", "static")
@@ -153,7 +162,9 @@ function drawMenu()
     local subtitle = "Press START to play"
 
     love.graphics.setColor(1, 1, 1)
+    love.graphics.setFont(font_title)
     love.graphics.printf(K.GAME_TITLE, 0, h / 3, w, "center")
+    love.graphics.setFont(font_game)
     love.graphics.printf(subtitle, 0, h / 2, w, "center")
 end
 
