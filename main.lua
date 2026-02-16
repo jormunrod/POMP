@@ -1,8 +1,12 @@
 local K = require("constants")
 
+local score
 local player
 local enemies
-local spawn_timer
+local coins
+local enemy_spawn_timer
+local coin_spawn_timer
+local checkCollision
 
 function love.load()
     local screen_width = love.graphics.getWidth()
@@ -14,7 +18,8 @@ function love.load()
         y = 0,
         w = K.PLAYER_SIZE,
         h = K.PLAYER_SIZE,
-        speed = K.PLAYER_SPEED
+        speed = K.PLAYER_SPEED,
+        lives = K.PLAYER_LIVES
     }
 
     player.x = screen_width / 2 - player.w / 2
@@ -22,14 +27,37 @@ function love.load()
 
     -- Enemies
     enemies = {}
-    spawn_timer = 0
+    enemy_spawn_timer = 0
+
+    -- Coins
+    coins = {}
+    coin_spawn_timer = 0
+
+    -- Score
+    score = 0
 end
 
 function love.draw() -- Executed in loop to draw the screen
+    -- Draw player
+    love.graphics.setColor(1, 1, 1)
     love.graphics.rectangle("fill", player.x, player.y, player.w, player.h)
-    for i, enemy in ipairs(enemies) do
+
+    -- Draw enemies
+    love.graphics.setColor(1, 0.2, 0.2)
+    for _, enemy in ipairs(enemies) do
         love.graphics.rectangle("fill", enemy.x, enemy.y, enemy.w, enemy.h)
     end
+
+    -- Draw coins
+    love.graphics.setColor(1, 1, 0)
+    for _, coin in ipairs(coins) do
+        love.graphics.rectangle("fill", coin.x, coin.y, coin.w, coin.h)
+    end
+
+    -- Draw UI
+    love.graphics.setColor(1, 1, 1)
+    love.graphics.print("Lives: " .. player.lives, 10, 10)
+    love.graphics.print("Score: " .. score, 10, 30)
 end
 
 function love.update(dt) -- Executed on every frame to calculate the logic
@@ -44,10 +72,48 @@ function love.update(dt) -- Executed on every frame to calculate the logic
         player.x = player.x - player.speed * dt
     end
 
+    -- Map limits
+    if player.x < 0 then
+        player.x = 0
+    end
+    if player.x > love.graphics.getWidth() - player.w then
+        player.x = love.graphics.getWidth() - player.w
+    end
+
+    -- Coins spawn
+    coin_spawn_timer = coin_spawn_timer - dt
+    if coin_spawn_timer <= 0 then
+        coin_spawn_timer = K.COIN_SPAWN_RATE
+
+        local new_coin = {
+            x = love.math.random(0, love.graphics.getWidth() - K.COIN_SIZE),
+            y = -K.COIN_SIZE,
+            w = K.COIN_SIZE,
+            h = K.COIN_SIZE,
+            speed = K.COIN_SPEED
+        }
+
+        table.insert(coins, new_coin)
+    end
+
+    -- Coins movement and cleanup
+    for i = #coins, 1, -1 do
+        local coin = coins[i]
+
+        coin.y = coin.y + coin.speed * dt
+
+        if checkCollision(player, coin) then
+            table.remove(coins, i)
+            score = score + 1
+        elseif coin.y > love.graphics.getHeight() then
+            table.remove(coins, i)
+        end
+    end
+
     -- Enemies spawn
-    spawn_timer = spawn_timer - dt
-    if spawn_timer <= 0 then
-        spawn_timer = K.ENEMY_SPAWN_RATE
+    enemy_spawn_timer = enemy_spawn_timer - dt
+    if enemy_spawn_timer <= 0 then
+        enemy_spawn_timer = K.ENEMY_SPAWN_RATE
 
         local new_enemy = {
             x = love.math.random(0, love.graphics.getWidth() - K.ENEMY_SIZE),
@@ -67,11 +133,15 @@ function love.update(dt) -- Executed on every frame to calculate the logic
         enemy.y = enemy.y + enemy.speed * dt
 
         if checkCollision(player, enemy) then
-            love.load() -- Restart the game
-            return
-        end
-
-        if enemy.y > love.graphics.getHeight() then
+            if player.lives > 1 then
+                player.lives = player.lives - 1
+            else
+                player.lives = 0
+                love.load()
+                return
+            end
+            table.remove(enemies, i)
+        elseif enemy.y > love.graphics.getHeight() then
             table.remove(enemies, i)
         end
     end
